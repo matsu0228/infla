@@ -1,0 +1,8 @@
+- hosts: targets
+  user: vagrant
+  tasks:
+    - name: output message.
+      debug: msg="{{ message }}"
+    - name: output fruits
+      debug: msg="We want {{ item.value.amount }} {{ item.key }} !"
+      with_dict: "{{ fruits }}"

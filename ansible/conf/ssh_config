@@ -1,0 +1,11 @@
+# vagrant
+Host cent7
+  HostName 192.168.33.10
+  User vagrant
+  Port 22
+  UserKnownHostsFile /dev/null
+  StrictHostKeyChecking no
+  PasswordAuthentication no
+  IdentityFile /Users/matsu/.ssh/vagrant_centos7
+  IdentitiesOnly yes
+

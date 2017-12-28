@@ -1,0 +1,7 @@
+# - hosts: targets
+#   tasks:
+- name: install packages for setup of shell enviroments
+  yum: name={{ item }} state=absent
+  with_items: 
+    - ibus-kkc
+    - vlgothic-*

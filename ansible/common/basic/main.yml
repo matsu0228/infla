@@ -1,0 +1,4 @@
+- hosts: targets
+  tasks:
+    - import_tasks: setup_shellenv.yml
+

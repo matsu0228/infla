@@ -1,7 +1,7 @@
 # porpose
 
 - this is repository of inflastructure and including followings.
-1. *Bootstrapping*: [Vagrant](/centos7/)
+1. *Bootstrapping*: [Vagrant](/vagrant/
 
 1. *Configuration*: [Ansible](/ansible/)
 

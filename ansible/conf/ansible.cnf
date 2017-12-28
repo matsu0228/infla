@@ -1,2 +1,0 @@
-[ssh_connection]
-ssh_args = -F /Users/matsu/Vagrant/ansible/ssh_config

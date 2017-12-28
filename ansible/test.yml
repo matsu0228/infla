@@ -1,5 +1,5 @@
 - hosts: targets
-  user: vagrant
+  # user: vagrant
   tasks:
     - name: output message.
       debug: msg="{{ message }}"

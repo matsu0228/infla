@@ -5,3 +5,9 @@
   with_items: 
     - ibus-kkc
     - vlgothic-*
+- name: set language conf
+  become: yes
+  become_method: sudo
+  copy:
+    dest: /etc/environment
+    content: LC_ALL=ja_JP.UTF-8

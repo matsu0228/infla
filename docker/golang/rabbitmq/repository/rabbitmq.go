@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/streadway/amqp"
 )
@@ -38,9 +39,9 @@ func NewRabbitMQ(user, password, host, vhost, port, qName string, dequeueUpper i
 		DequeueUpper: dequeueUpper,
 	}
 
-	if err := mq.newConnection(); err != nil {
-		return &RabbitMQ{}, err
-	}
+	// if err := mq.newConnection(); err != nil {
+	// 	return &RabbitMQ{}, err
+	// }
 	return mq, nil
 }
 
@@ -83,10 +84,23 @@ func (r *RabbitMQ) newConnection() error {
 	return nil
 }
 
+// ChannelClose : close Channel
+func (r *RabbitMQ) ChannelClose() error {
+	log.Print("[DEBUG] ChannelClose() called")
+	return r.Channel.Close()
+}
+
 // Enqueue function execute enqueueing to rabbitMQ
 func (r *RabbitMQ) Enqueue(name, payload string) error {
+
 	log.Printf("[DEBUG] Enqueue() to %v with %v", name, payload)
-	err := r.Channel.Publish(
+	var err error
+	err = r.newConnection()
+	if err != nil {
+		return err
+	}
+
+	err = r.Channel.Publish(
 		"",
 		name,
 		false,
@@ -106,6 +120,11 @@ func (r *RabbitMQ) Enqueue(name, payload string) error {
 // Ackを返すとキューからメッセージが削除されるためAuto-Ackはfalseにする
 func (r *RabbitMQ) Dequeue() ([]QueueHandler, error) {
 
+	var err error
+	err = r.newConnection()
+	if err != nil {
+		return []QueueHandler{}, err
+	}
 	// キュー内のメッセージ数を取得.最大件数以下となるようにエンキューする
 	messageCount := r.Queue.Messages
 	dequeueUpper := messageCount
@@ -130,30 +149,25 @@ func (r *RabbitMQ) Dequeue() ([]QueueHandler, error) {
 	}
 
 	var mqs []QueueHandler //output
-	forever := make(chan int)
-	ch := make(chan int, 2) //groutine上限の設定
+	// forever := make(chan int)
+	// ch := make(chan int, 2) //groutine上限の設定
+	wg := &sync.WaitGroup{}
 
-	go func() {
-		for msg := range msgs {
-			ch <- 1
-			log.Printf("[DEBUG] load msgs: ch=%v /%v", ch, r.Queue.Messages)
-			// mq := streamToString(msg.Body)
-			// mq := string(msg.Body)
+	for i := 0; i < dequeueUpper; i++ {
+		wg.Add(1)
+		go func() {
+			msg := <-msgs
+			log.Printf("[DEBUG] load msgs:  %v/%v, value:%v", i, r.Queue.Messages, string(msg.Body))
 			mq := QueueHandler{
 				DeliveryTag: msg.DeliveryTag,
 				Body:        string(msg.Body),
 			}
 			mqs = append(mqs, mq)
-			forever <- 1
-			<-ch
-		}
-	}()
-
-	// キュー内のメッセージをすべて受け取るまで待機
-	// wg.Wait() // キュー内のメッセージをすべて受け取るまで待機
-	for i := 0; i < dequeueUpper; i++ {
-		<-forever
+			wg.Done()
+		}()
 	}
+
+	wg.Wait() // キュー内のメッセージをすべて受け取るまで待機
 
 	return mqs, nil
 }
@@ -161,11 +175,6 @@ func (r *RabbitMQ) Dequeue() ([]QueueHandler, error) {
 // Ack function execute ack.
 // 価格更新が成功したメッセージにAckを返し、キュー内から削除する
 func (r *RabbitMQ) Ack(deliveryTag uint64) error {
-	// tag, err := strconv.ParseUint(id, 10, 64)
-	// if err != nil {
-	// 	return err
-	// }
-
 	// WARNING
 	// if err := r.newConnection(); err != nil {
 	// 	return err
@@ -181,14 +190,13 @@ func (r *RabbitMQ) Ack(deliveryTag uint64) error {
 }
 
 // Nack function execute nack and reject.
-// 価格更新が失敗したメッセージにNackを返す。(=再度キューが配信される状態とする)
-// NOTE: 原因不明であるが、NackしたたとにRejectしないと次の更新時に再度メッセージを取得することができなくなる
+// 処理が失敗したメッセージにNackを返す。(=再度キューが配信される状態とする)
 func (r *RabbitMQ) Nack(deliveryTag uint64) error {
 	if err := r.Channel.Nack(deliveryTag, false, true); err != nil {
 		return err
 	}
-	if err := r.Channel.Reject(deliveryTag, true); err != nil { //第二引数=trueで、キューを再度送信される状態とする
-		return err
-	}
+	// if err := r.Channel.Reject(deliveryTag, true); err != nil { //第二引数=trueで、キューを再度送信される状態とする
+	// 	return err
+	// }
 	return nil
 }

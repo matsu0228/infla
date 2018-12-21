@@ -1,9 +1,9 @@
-# porpose
+# purpose
 
-- this is repository of inflastructure and including followings.
-1. *Bootstrapping*: [Vagrant](/vagrant/
-
-1. *Configuration*: [Ansible](/ansible/)
+This repository's purpose is learning inflastructure, including followings.
+* *Bootstrapping*: [Vagrant](/vagrant/)
+* *Configuration*: [Ansible](/ansible/)
+* Application Code: [golang](/docker/golang/)
 
 # env
 
@@ -17,5 +17,12 @@ $ VBoxManage -v
 
 $ ansible --version
 ansible 2.4.2.0
+
+
+$ docker -vi
+Docker version 18.09.0, build 4d60db4
+
+$ docker-compose -v
+docker-compose version 1.23.2, build 1110ad01
 ```
 

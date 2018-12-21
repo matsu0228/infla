@@ -1,18 +1,20 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/k0kubun/pp"
 	"github.com/matsu0228/infla/rabbitmq/repository"
+	"github.com/matsu0228/infla/rabbitmqHandling/controller"
 )
 
 // errorExit :エラー終了時の共通処理
 func errorExit(err error) {
-	log.Fatal(err)
+	log.Fatal("[ERROR] ", err)
 }
 
 func envLoad() error {
@@ -29,8 +31,45 @@ func enqueue(mq *repository.RabbitMQ, qn string) {
 		if err != nil {
 			errorExit(err)
 		}
-		// time.Sleep(500 * time.Millisecond)
+
+		time.Sleep(500 * time.Millisecond)
 	}
+	err := mq.ChannelClose()
+	if err != nil {
+		errorExit(err)
+	}
+}
+
+type mqRunner struct {
+	MQ *repository.RabbitMQ
+}
+
+func newMqRunner(mq *repository.RabbitMQ) *mqRunner {
+	return &mqRunner{
+		MQ: mq,
+	}
+}
+
+// Run is task main
+func (m *mqRunner) Run() error {
+	log.Printf("[INFO] Run() with %#v", *m.MQ)
+
+	defer m.MQ.ChannelClose()
+	mqs, err := m.MQ.Dequeue()
+	if err != nil {
+		errorExit(err)
+	}
+	// pp.Print(mqs)
+
+	// Ack()
+	for _, q := range mqs {
+		err := m.MQ.Ack(q.DeliveryTag)
+		// err := mq.Nack(q.DeliveryTag)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func main() {
@@ -45,7 +84,7 @@ func main() {
 	mqPORT := os.Getenv("MQ_PORT")
 	mqQueueName := os.Getenv("MQ_QUEUE_NAME")
 	// requestURL := os.Getenv("REQUEST_URL")
-	mqDequeueUpper := 10
+	mqDequeueUpper := 50
 
 	// log.Printf("MQ setting: u:%v, p:%v, %v, %v :%v, qName:%v", mqUser, mqPass, mqHost, mqVhost, mqPORT, mqQueueName)
 	// pp.Print("requestURL setting: ", requestURL)
@@ -60,20 +99,10 @@ func main() {
 
 	// create test data
 	// enqueue(mq, mqQueueName)
-	mqs, err := mq.Dequeue()
-	defer mq.ChannelClose()
-	if err != nil {
-		errorExit(err)
-	}
-	pp.Print(mqs)
 
-	// Ack()
-	for _, q := range mqs {
-		err := mq.Ack(q.DeliveryTag)
-		// err := mq.Nack(q.DeliveryTag)
-		if err != nil {
-			errorExit(err)
-		}
-	}
-
+	mqUsecase := newMqRunner(mq)
+	ctx := context.Background()
+	clockTime := 20 * time.Millisecond
+	clockController := controller.NewController(clockTime, mqUsecase, true)
+	clockController.Exec(ctx)
 }

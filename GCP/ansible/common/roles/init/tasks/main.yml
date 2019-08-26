@@ -1,0 +1,56 @@
+---
+- name: add japanese NTP servers
+  lineinfile:
+    dest: /etc/systemd/timesyncd.conf
+    state: present
+    insertafter: "^\\[Time\\]"
+    line: "NTP={{ ntp_address }}"
+  when: ntp_address is defined
+
+- name: restart NTP sync (systemd-timesyncd)
+  systemd: name=systemd-timesyncd.service state=restarted enabled=yes
+
+
+
+
+- name: install yum packeges
+  apt:
+    name: "{{ item }}"
+    state: latest
+  loop:
+    - ibus-kkc
+    - unzip
+    - dnsutils
+    - jq
+    - bash-completion
+    - vim
+    - wget
+    - https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
+    - neovim
+    - python3-neovim
+
+- name: create locale to ja_JP.UTF-8
+  locale_gen: name=ja_JP.UTF-8 state=present
+
+- name: change locale to ja_JP.UTF-8
+  command: update-locale LANG=ja_JP.UTF-8
+
+
+
+- name: yum update
+  command: yum clean all && yum -y update
+
+
+
+
+
+# 共通の環境変数定義
+- name: create /etc/profile.d
+  file:
+    path: /etc/profile.d
+    state: directory
+- name: add export LESSCHARSET
+  copy:
+    dest: /etc/profile.d/lesscharset.sh
+    content: |
+      export LESSCHARSET=UTF-8

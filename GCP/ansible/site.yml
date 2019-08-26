@@ -1,0 +1,6 @@
+# 個別ノード構築
+# - hosts: 
+#   become: yes
+#   roles:
+#
+- { name: common/roles/init, tags: init }

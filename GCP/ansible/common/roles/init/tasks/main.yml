@@ -1,14 +1,14 @@
 ---
-- name: add japanese NTP servers
-  lineinfile:
-    dest: /etc/systemd/timesyncd.conf
-    state: present
-    insertafter: "^\\[Time\\]"
-    line: "NTP={{ ntp_address }}"
-  when: ntp_address is defined
-
-- name: restart NTP sync (systemd-timesyncd)
-  systemd: name=systemd-timesyncd.service state=restarted enabled=yes
+# - name: add japanese NTP servers
+#   lineinfile:
+#     dest: /etc/systemd/timesyncd.conf
+#     state: present
+#     insertafter: "^\\[Time\\]"
+#     line: "NTP={{ ntp_address }}"
+#   when: ntp_address is defined
+# 
+# - name: restart NTP sync (systemd-timesyncd)
+#   systemd: name=systemd-timesyncd.service state=restarted enabled=yes
 
 
 
@@ -17,17 +17,17 @@
   apt:
     name: "{{ item }}"
     state: latest
-  loop:
-    - ibus-kkc
+  vars:
+    item:
     - unzip
-    - dnsutils
+    #- dnsutils
     - jq
-    - bash-completion
+    #- bash-completion
     - vim
     - wget
-    - https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
-    - neovim
-    - python3-neovim
+    #- https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm 
+    #- neovim
+    #- python3-neovim
 
 - name: create locale to ja_JP.UTF-8
   locale_gen: name=ja_JP.UTF-8 state=present
@@ -35,12 +35,8 @@
 - name: change locale to ja_JP.UTF-8
   command: update-locale LANG=ja_JP.UTF-8
 
-
-
 - name: yum update
   command: yum clean all && yum -y update
-
-
 
 
 

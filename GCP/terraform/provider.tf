@@ -29,7 +29,8 @@ resource "google_compute_instance" "instance_template" {
   }
 
   network_interface {
-    network = "default"
+    network    = "${google_compute_network.terraform-vpc.self_link}"
+    subnetwork = "${google_compute_subnetwork.subnet1.name}"
     access_config {
       nat_ip = "${google_compute_address.ftp-static-ip.address}"
     }
@@ -68,7 +69,8 @@ resource "google_compute_instance" "instance_target" {
   }
 
   network_interface {
-    network = "default"
+    network    = "${google_compute_network.terraform-vpc.self_link}"
+    subnetwork = "${google_compute_subnetwork.subnet1.name}"
   }
 
   metadata_startup_script = <<EOT

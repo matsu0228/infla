@@ -1,4 +1,6 @@
-
+variable "region" {
+  default = "asia-northeast1"
+}
 
 variable "ansible_ssh_keys" {
   type = "string"
